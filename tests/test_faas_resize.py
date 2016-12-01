@@ -27,7 +27,7 @@ class TestFaaS(unittest.TestCase):
         self.assertGreaterEqual(quota['disk-used'], 0)
 
     def test_cannot_get_export_quota(self):
-        self.assertRaises(QuotaAPIError, self.provider.get_export_size, '')
+        self.assertRaises(QuotaAPIError, self.provider.get_export_size, 'fake')
 
     def test_can_do_resize_greater_size(self):
         host = self.provider.create_export(size_kb=512, host=None)
