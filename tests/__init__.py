@@ -2,6 +2,7 @@
 FAKE_IP = '1.2.3.4'
 FAKE_IP_OTHER = '1.2.3.5'
 HOSTS = []
+GROUPS = []
 
 
 def get_config(parameter):
@@ -50,15 +51,22 @@ class DjangoObjects(object):
         self.items = items
 
     def filter(self, **kwargs):
-        for item in self.items:
-            if self._match(item, kwargs):
-                yield item
+        return DjangoObjects(
+            [item for item in self.items if self._match(item, kwargs)]
+        )
 
     def get(self, **kwargs):
         for item in self.items:
             if self._match(item, kwargs):
                 return item
         raise ObjectDoesNotExist()
+
+    def first(self):
+        try:
+            return self.items[0]
+        except IndexError:
+            return None
+
 
     @staticmethod
     def _match(item, kwargs):
@@ -100,13 +108,14 @@ class FakeHostClass(object):
 
     def __init__(
             self, host, nfsaas_export_id, nfsaas_path,
-            nfsaas_path_host, nfsaas_size_kb
+            nfsaas_path_host, nfsaas_size_kb, group
     ):
         self.host = host
         self.nfsaas_export_id = nfsaas_export_id
         self.nfsaas_path_host = nfsaas_path_host
         self.nfsaas_path = nfsaas_path
         self.nfsaas_size_kb = nfsaas_size_kb
+        self.group = group
 
     def save(self):
         HOSTS.append(self)
@@ -128,6 +137,25 @@ class FakeFaaSAPI(object):
         return (999, 'FaaS - FakeAPI Error - Removing Access')
 
 
+class FakeDatabaseInfra(object):
+    databaseinfra = 'FakeInfra'
+
+
 class FakeCloudClass(object):
     objects = DjangoObjects([])
     address = 'F.a.k.e'
+    instances = DjangoObjects([FakeDatabaseInfra()])
+
+
+class FakeGroup(object):
+    objects = DjangoObjects([])
+
+    def __init__(self, infra=None, resource_id=None):
+        self.infra = infra
+        self.resource_id = resource_id
+
+    def save(self):
+        GROUPS.append(self)
+
+    def delete(self):
+        GROUPS.remove(self)

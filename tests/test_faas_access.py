@@ -4,17 +4,20 @@ from dbaas_nfsaas.dbaas_api import DatabaseAsAServiceApi
 from dbaas_nfsaas.faas_provider import Provider
 from dbaas_nfsaas.errors import CreateAccessAPIError, DeleteAccessAPIError, \
     ListAccessAPIError
-from tests import Credential, FakeHostClass, FakeFaaSAPI, FakeCloudClass
+from tests import Credential, FakeHostClass, FakeFaaSAPI, FakeCloudClass, \
+    FakeGroup
 from tests import FAKE_IP, FAKE_IP_OTHER
 
 
 class TestFaaS(unittest.TestCase):
+
     @classmethod
     def setUpClass(cls):
         cls.credential = Credential()
         cls.dbaas_api = DatabaseAsAServiceApi(credentials=cls.credential)
         cls.provider = Provider(
-            dbaas_api=cls.dbaas_api, host_class=FakeHostClass
+            dbaas_api=cls.dbaas_api, host_class=FakeHostClass,
+            group_klass=FakeGroup
         )
         cls.host = cls.provider.create_export(size_kb=512, host=FakeCloudClass)
 
