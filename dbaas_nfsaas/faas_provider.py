@@ -9,7 +9,7 @@ from errors import CreateExportAPIError, DeleteExportAPIError, \
 
 class Provider(object):
 
-    def __init__(self, dbaas_api, host_class):
+    def __init__(self, dbaas_api, host_class, group_klass):
         self.dbaas_api = dbaas_api
         self.client = Client(
             authurl=dbaas_api.endpoint, user=dbaas_api.user,
@@ -17,19 +17,40 @@ class Provider(object):
             insecure=dbaas_api.is_secure
         )
         self.host_class = host_class
+        self.group_klass = group_klass
+
+    def _get_or_create_infra_group(self, host):
+        if not host:
+            return self.group_klass()
+
+        infra = host.instances.first().databaseinfra
+        group = self.group_klass.objects.filter(infra=infra).first()
+        if not group:
+            group = self.group_klass(infra=infra)
+        return group
 
     def create_export(self, host, size_kb):
-        request = self.client.export_create(size_kb, self.dbaas_api.category)
+        group = self._get_or_create_infra_group(host)
+        request = self.client.export_create(
+            size_kb, self.dbaas_api.category, group.resource_id
+        )
+
         if request[0] != 201:
             raise CreateExportAPIError(request)
 
         export = request[1]
+
+        if not group.resource_id:
+            group.resource_id = export['resource_id']
+            group.save()
+
         disk = self.host_class(
             host=host,
             nfsaas_export_id=export['id'],
             nfsaas_path_host=export['path'],
             nfsaas_path=export['full_path'],
-            nfsaas_size_kb=size_kb
+            nfsaas_size_kb=size_kb,
+            group=group
         )
         disk.save()
 
