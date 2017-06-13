@@ -67,6 +67,9 @@ class DjangoObjects(object):
         except IndexError:
             return None
 
+    def all(self):
+        return self.items
+
 
     @staticmethod
     def _match(item, kwargs):
@@ -148,11 +151,15 @@ class FakeCloudClass(object):
 
 
 class FakeGroup(object):
-    objects = DjangoObjects([])
+    objects = DjangoObjects(GROUPS)
 
     def __init__(self, infra=None, resource_id=None):
         self.infra = infra
         self.resource_id = resource_id
+
+    @property
+    def hosts(self):
+        return DjangoObjects(HOSTS).filter(group=self)
 
     def save(self):
         GROUPS.append(self)

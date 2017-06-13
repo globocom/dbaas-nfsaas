@@ -26,7 +26,9 @@ class Provider(object):
         infra = host.instances.first().databaseinfra
         group = self.group_klass.objects.filter(infra=infra).first()
         if not group:
-            group = self.group_klass(infra=infra)
+            group = self.group_klass()
+            group.infra = infra
+            group.resource_id = None
         return group
 
     def create_export(self, host, size_kb):
