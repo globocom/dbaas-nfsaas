@@ -75,6 +75,11 @@ class Provider(object):
 
         disk.delete()
 
+        if disk.group:
+            group = disk.group
+            if not group.hosts.all():
+                group.delete()
+
         return True
 
     def list_access(self, export_path):
