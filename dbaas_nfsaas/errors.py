@@ -53,3 +53,11 @@ class QuotaAPIError(FaaSAPIError):
 
 class ResizeAPIError(QuotaAPIError):
     pass
+
+
+class GenerateTokenError(FaaSAPIError):
+    pass
+
+
+class GenerateResourceIdError(FaaSAPIError):
+    pass

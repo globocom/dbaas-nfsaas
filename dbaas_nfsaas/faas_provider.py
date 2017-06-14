@@ -1,6 +1,6 @@
 import time
 from faasclient.client import Client
-from util import delete_all_disk_files
+from util import delete_all_disk_files, generate_resource_id
 from errors import CreateExportAPIError, DeleteExportAPIError, \
     CreateAccessAPIError, DeleteAccessAPIError, ListAccessAPIError, \
     CreateSnapshotAPIError, DeleteSnapshotAPIError, RestoreSnapshotAPIError, \
@@ -166,3 +166,18 @@ class Provider(object):
             raise ResizeAPIError(request)
 
         return True
+
+    def create_resource_id(self, infra):
+        disks = set()
+        for instance in infra.instances.all():
+            for disk in instance.hostname.nfsaas_host_attributes.all():
+                disks.add(disk)
+
+        group = self.group_klass()
+        group.infra = infra
+        group.resource_id = generate_resource_id(disks, self.dbaas_api)
+        group.save()
+
+        for disk in disks:
+            disk.group = group
+            disk.save()

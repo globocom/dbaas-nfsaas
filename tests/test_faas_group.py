@@ -3,7 +3,8 @@ import unittest
 from dbaas_nfsaas.dbaas_api import DatabaseAsAServiceApi
 from dbaas_nfsaas.faas_provider import Provider
 from tests import Credential, FakeHostClass, GROUPS, FakeCloudClass, \
-    FakeGroup, FakeDatabaseInfra, clean_faas_environment
+    FakeGroup, FakeDatabaseInfra, clean_faas_environment, FakePhysicalHost, \
+    FakePhysicalInstance
 
 
 class TestFaaS(unittest.TestCase):
@@ -17,8 +18,9 @@ class TestFaaS(unittest.TestCase):
             group_klass=FakeGroup
         )
 
-    def tearDown(self):
-        clean_faas_environment(self.provider)
+    @classmethod
+    def tearDownClass(cls):
+        clean_faas_environment(cls.provider)
 
     def test_create_and_destroy_group(self):
         self.assertEqual(len(GROUPS), 0)
@@ -61,4 +63,96 @@ class TestFaaS(unittest.TestCase):
         self.assertEqual(len(GROUPS), 1)
 
         self.provider.delete_export(host_3.nfsaas_path_host, FakeCloudClass)
+        self.assertEqual(len(GROUPS), 0)
+
+    def test_can_generate_resource_id_ha(self):
+        self.assertEqual(len(GROUPS), 0)
+        disk_1 = self.provider.create_export(size_kb=512, host=FakeCloudClass)
+        disk_2 = self.provider.create_export(size_kb=512, host=FakeCloudClass)
+        disk_3 = self.provider.create_export(size_kb=512, host=FakeCloudClass)
+
+        self.assertEqual(len(GROUPS), 1)
+        GROUPS[0].delete()
+        self.assertEqual(len(GROUPS), 0)
+
+        disk_1.group = None
+        disk_2.group = None
+        disk_3.group = None
+
+        infra = FakeDatabaseInfra([
+            FakePhysicalInstance(FakePhysicalHost([disk_1, disk_3])),
+            FakePhysicalInstance(FakePhysicalHost([disk_2]))
+        ])
+        self.provider.create_resource_id(infra)
+
+        self.assertEqual(len(GROUPS), 1)
+        self.assertEqual(disk_1.group, GROUPS[0])
+        self.assertEqual(disk_2.group, GROUPS[0])
+        self.assertEqual(disk_3.group, GROUPS[0])
+        self.assertEqual(len(GROUPS[0].hosts.all()), 3)
+        self.assertIn(disk_1, GROUPS[0].hosts.all())
+        self.assertIn(disk_2, GROUPS[0].hosts.all())
+        self.assertIn(disk_3, GROUPS[0].hosts.all())
+
+        self.provider.delete_export(disk_1.nfsaas_path_host, FakeCloudClass)
+        self.provider.delete_export(disk_2.nfsaas_path_host, FakeCloudClass)
+        self.provider.delete_export(disk_3.nfsaas_path_host, FakeCloudClass)
+        self.assertEqual(len(GROUPS), 0)
+
+    def test_can_generate_resource_id_single(self):
+        self.assertEqual(len(GROUPS), 0)
+        disk = self.provider.create_export(size_kb=512, host=FakeCloudClass)
+
+        self.assertEqual(len(GROUPS), 1)
+        GROUPS[0].delete()
+        self.assertEqual(len(GROUPS), 0)
+        disk.group = None
+
+        infra = FakeDatabaseInfra([
+            FakePhysicalInstance(FakePhysicalHost([disk]))
+        ])
+        self.provider.create_resource_id(infra)
+
+        self.assertEqual(len(GROUPS), 1)
+        self.assertEqual(disk.group, GROUPS[0])
+
+        self.provider.delete_export(disk.nfsaas_path_host, FakeCloudClass)
+        self.assertEqual(len(GROUPS), 0)
+
+    def test_can_generate_resource_id_multi_infra(self):
+        infra_1 = FakeDatabaseInfra()
+        infra_1.databaseinfra = 'Fake_01'
+
+        infra_2 = FakeDatabaseInfra()
+        infra_2.databaseinfra = 'Fake_02'
+
+        self.assertEqual(len(GROUPS), 0)
+        disk_1 = self.provider.create_export(size_kb=512, host=FakeCloudClass(infra_1))
+        disk_2 = self.provider.create_export(size_kb=512, host=FakeCloudClass(infra_2))
+
+        self.assertEqual(len(GROUPS), 2)
+        while GROUPS:
+            GROUPS[0].delete()
+        self.assertEqual(len(GROUPS), 0)
+        disk_1.group = None
+        disk_2.group = None
+
+        infra_1.instances.items.append(
+            FakePhysicalInstance(FakePhysicalHost([disk_1]))
+        )
+        self.provider.create_resource_id(infra_1)
+        self.assertEqual(len(GROUPS), 1)
+
+        infra_2.instances.items.append(
+            FakePhysicalInstance(FakePhysicalHost([disk_2]))
+        )
+        self.provider.create_resource_id(infra_2)
+        self.assertEqual(len(GROUPS), 2)
+
+        self.assertEqual(disk_1.group, GROUPS[0])
+        self.assertEqual(disk_2.group, GROUPS[1])
+
+        self.provider.delete_export(disk_1.nfsaas_path_host, FakeCloudClass)
+        self.assertEqual(len(GROUPS), 1)
+        self.provider.delete_export(disk_2.nfsaas_path_host, FakeCloudClass)
         self.assertEqual(len(GROUPS), 0)

@@ -133,7 +133,8 @@ class FakeHostClass(object):
         self.group = group
 
     def save(self):
-        HOSTS.append(self)
+        if self not in HOSTS:
+            HOSTS.append(self)
 
     def delete(self):
         HOSTS.remove(self)
@@ -152,14 +153,34 @@ class FakeFaaSAPI(object):
         return (999, 'FaaS - FakeAPI Error - Removing Access')
 
 
+class FakePhysicalHost(object):
+    def __init__(self, disks=None):
+        if not disks:
+            disks = []
+        self.nfsaas_host_attributes = DjangoObjects(disks)
+
+
+class FakePhysicalInstance(object):
+    def __init__(self, host):
+        self.hostname = host
+
+
 class FakeDatabaseInfra(object):
-    databaseinfra = 'FakeInfra'
+    def __init__(self, instances=None):
+        if not instances:
+            instances = []
+        self.instances = DjangoObjects(instances)
+        self.databaseinfra = 'FakeInfra'
 
 
 class FakeCloudClass(object):
     objects = DjangoObjects([])
     address = 'F.a.k.e'
     instances = DjangoObjects([FakeDatabaseInfra()])
+
+    def __init__(self, instance=None):
+        if instance:
+            self.instances = DjangoObjects([instance])
 
 
 class FakeGroup(object):
