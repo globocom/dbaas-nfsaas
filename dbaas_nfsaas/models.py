@@ -11,6 +11,9 @@ class Group(BaseModel):
     )
     resource_id = models.CharField(max_length=100, unique=True)
 
+    def __unicode__(self):
+        return '{}: {}'.format(self.infra, self.resource_id)
+
 
 class HostAttr(BaseModel):
     host = models.ForeignKey(
@@ -43,3 +46,6 @@ class HostAttr(BaseModel):
         return Snapshot.objects.filter(
             export_path=self.nfsaas_path, purge_at=None
         )
+
+    def __unicode__(self):
+        return '{}'.format(self.nfsaas_path)
