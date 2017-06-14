@@ -33,3 +33,15 @@ class DatabaseAsAServiceApi(object):
     @property
     def access_permission(self):
         return str(self.credentials.get_parameter_by_name('access_permission'))
+
+    @property
+    def tenant_id(self):
+        return str(self.credentials.get_parameter_by_name('tenant_id'))
+
+    @property
+    def token_endpoint(self):
+        return str(self.credentials.get_parameter_by_name('token_endpoint'))
+
+    @property
+    def resource_endpoint(self):
+        return str(self.credentials.get_parameter_by_name('resource_endpoint'))

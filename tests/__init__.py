@@ -95,9 +95,21 @@ class Credential(object):
         self.param_access_permission = Parameter(
             'access_permission', 'read-write'
         )
+        self.param_tenant_id = Parameter(
+            'tenant_id', get_config('project_id')
+        )
+        self.param_token_endpoint = Parameter(
+            'token_endpoint', '{}/tokens'.format(self.endpoint)
+        )
+        self.param_resource_endpoint = Parameter(
+            'resource_endpoint', get_config('resource_endpoint')
+        )
         self.parameters.append(self.param_is_secure)
         self.parameters.append(self.param_category)
         self.parameters.append(self.param_access_permission)
+        self.parameters.append(self.param_tenant_id)
+        self.parameters.append(self.param_token_endpoint)
+        self.parameters.append(self.param_resource_endpoint)
 
     def get_parameter_by_name(self, name):
         for param in self.parameters:
