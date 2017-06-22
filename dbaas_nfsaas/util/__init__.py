@@ -79,7 +79,7 @@ def generate_token(dbaas_api):
     }
 
     response = requests.post(
-        dbaas_api.token_endpoint, json=json_data, verify=dbaas_api.is_secure
+        dbaas_api.token_endpoint, json=json_data, verify=not dbaas_api.is_secure
     )
     if response.status_code != 200:
         raise GenerateTokenError(response.content)
@@ -97,7 +97,7 @@ def generate_resource_id(disks, dbaas_api):
 
     response = requests.post(
         dbaas_api.resource_endpoint, headers={'X-Auth-Token': token},
-        data=exports, verify=dbaas_api.is_secure
+        data=exports, verify=not dbaas_api.is_secure
     )
 
     if response.status_code != 200:
