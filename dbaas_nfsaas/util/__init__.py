@@ -89,15 +89,10 @@ def generate_token(dbaas_api):
 def generate_resource_id(disks, dbaas_api):
     token = generate_token(dbaas_api)
 
-    exports = ''
-    for disk in disks:
-        if exports != "":
-            exports += "&"
-        exports += 'exports={}'.format(disk.nfsaas_export_id)
-
+    exports = [disk.nfsaas_export_id for disk in disks]
     response = requests.post(
         dbaas_api.resource_endpoint, headers={'X-Auth-Token': token},
-        data=exports, verify=not dbaas_api.is_secure
+        data={'exports': exports}, verify=not dbaas_api.is_secure
     )
 
     if response.status_code != 200:
