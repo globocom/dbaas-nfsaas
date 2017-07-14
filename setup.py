@@ -21,7 +21,7 @@ with open('requirements.txt') as requirements_file:
 
 setup(
     name='dbaas_nfsaas',
-    version='0.6.17',
+    version='0.6.18',
     description='NFSaaS integration for DBaaS',
     long_description=readme,
     author='Mauro Andre Murari',
