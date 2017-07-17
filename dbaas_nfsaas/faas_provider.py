@@ -9,7 +9,7 @@ from errors import CreateExportAPIError, DeleteExportAPIError, \
 
 class Provider(object):
 
-    def __init__(self, dbaas_api, host_class, group_klass):
+    def __init__(self, dbaas_api, host_class, group_class):
         self.dbaas_api = dbaas_api
         self.client = Client(
             authurl=dbaas_api.endpoint, user=dbaas_api.user,
@@ -17,22 +17,22 @@ class Provider(object):
             insecure=dbaas_api.is_secure
         )
         self.host_class = host_class
-        self.group_klass = group_klass
+        self.group_class = group_class
 
-    def _get_or_create_infra_group(self, host):
+    def _get_or_generate_infra_group(self, host):
         if not host:
-            return self.group_klass()
+            return self.group_class()
 
         infra = host.instances.first().databaseinfra
-        group = self.group_klass.objects.filter(infra=infra).first()
+        group = self.group_class.objects.filter(infra=infra).first()
         if not group:
-            group = self.group_klass()
+            group = self.group_class()
             group.infra = infra
             group.resource_id = None
         return group
 
     def create_export(self, host, size_kb):
-        group = self._get_or_create_infra_group(host)
+        group = self._get_or_generate_infra_group(host)
         request = self.client.export_create(
             size_kb, self.dbaas_api.category, group.resource_id
         )
@@ -173,7 +173,7 @@ class Provider(object):
             for disk in instance.hostname.nfsaas_host_attributes.all():
                 disks.add(disk)
 
-        group = self.group_klass()
+        group = self.group_class()
         group.infra = infra
         group.resource_id = generate_resource_id(disks, self.dbaas_api)
         group.save()
