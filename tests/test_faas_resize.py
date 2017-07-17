@@ -14,7 +14,7 @@ class TestFaaS(unittest.TestCase):
         cls.dbaas_api = DatabaseAsAServiceApi(credentials=cls.credential)
         cls.provider = Provider(
             dbaas_api=cls.dbaas_api, host_class=FakeHostClass,
-            group_klass=FakeGroup
+            group_class=FakeGroup
         )
 
     @classmethod
