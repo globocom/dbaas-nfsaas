@@ -33,3 +33,20 @@ class TestAPI(unittest.TestCase):
             self.credential.param_access_permission.value,
             self.dbaas_api.access_permission
         )
+
+        self.assertIsInstance(self.dbaas_api.tenant_id, str)
+        self.assertEqual(
+            self.credential.param_tenant_id.value, self.dbaas_api.tenant_id
+        )
+
+        self.assertIsInstance(self.dbaas_api.token_endpoint, str)
+        self.assertEqual(
+            self.credential.param_token_endpoint.value,
+            self.dbaas_api.token_endpoint
+        )
+
+        self.assertIsInstance(self.dbaas_api.resource_endpoint, str)
+        self.assertEqual(
+            self.credential.param_resource_endpoint.value,
+            self.dbaas_api.resource_endpoint
+        )

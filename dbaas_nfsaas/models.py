@@ -5,6 +5,16 @@ from django.utils.translation import ugettext_lazy as _
 from backup.models import Snapshot
 
 
+class Group(BaseModel):
+    infra = models.ForeignKey(
+        'physical.DatabaseInfra', related_name="nfsaas_group", unique=True
+    )
+    resource_id = models.CharField(max_length=100, unique=True)
+
+    def __unicode__(self):
+        return '{}: {}'.format(self.infra, self.resource_id)
+
+
 class HostAttr(BaseModel):
     host = models.ForeignKey(
         'physical.Host', related_name="nfsaas_host_attributes"
@@ -25,6 +35,9 @@ class HostAttr(BaseModel):
     nfsaas_used_size_kb = models.IntegerField(
         verbose_name=_("Used size KB"), null=True, blank=True
     )
+    group = models.ForeignKey(
+        Group, related_name='hosts', null=True, blank=True
+    )
 
     class Meta:
         verbose_name_plural = 'NFaaS Custom Host Attributes'
@@ -33,3 +46,6 @@ class HostAttr(BaseModel):
         return Snapshot.objects.filter(
             export_path=self.nfsaas_path, purge_at=None
         )
+
+    def __unicode__(self):
+        return '{}'.format(self.nfsaas_path)

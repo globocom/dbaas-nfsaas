@@ -3,7 +3,7 @@ import unittest
 from dbaas_nfsaas.dbaas_api import DatabaseAsAServiceApi
 from dbaas_nfsaas.faas_provider import Provider
 from dbaas_nfsaas.errors import QuotaAPIError, ResizeAPIError
-from tests import Credential, FakeHostClass, clean_faas_environment
+from tests import Credential, FakeHostClass, clean_faas_environment, FakeGroup
 
 
 class TestFaaS(unittest.TestCase):
@@ -13,7 +13,8 @@ class TestFaaS(unittest.TestCase):
         cls.credential = Credential()
         cls.dbaas_api = DatabaseAsAServiceApi(credentials=cls.credential)
         cls.provider = Provider(
-            dbaas_api=cls.dbaas_api, host_class=FakeHostClass
+            dbaas_api=cls.dbaas_api, host_class=FakeHostClass,
+            group_class=FakeGroup
         )
 
     @classmethod

@@ -3,5 +3,5 @@ wheel==0.22.0
 django-simple-audit==0.1.14
 South==0.8.2
 dbaas_credentials==0.1.0
-python-faasclient==0.2.1
+python-faasclient==0.3.2
 paramiko==2.1.1

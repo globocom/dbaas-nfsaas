@@ -1,6 +1,6 @@
 import time
 from faasclient.client import Client
-from util import delete_all_disk_files
+from util import delete_all_disk_files, generate_resource_id
 from errors import CreateExportAPIError, DeleteExportAPIError, \
     CreateAccessAPIError, DeleteAccessAPIError, ListAccessAPIError, \
     CreateSnapshotAPIError, DeleteSnapshotAPIError, RestoreSnapshotAPIError, \
@@ -9,7 +9,7 @@ from errors import CreateExportAPIError, DeleteExportAPIError, \
 
 class Provider(object):
 
-    def __init__(self, dbaas_api, host_class):
+    def __init__(self, dbaas_api, host_class, group_class):
         self.dbaas_api = dbaas_api
         self.client = Client(
             authurl=dbaas_api.endpoint, user=dbaas_api.user,
@@ -17,19 +17,42 @@ class Provider(object):
             insecure=dbaas_api.is_secure
         )
         self.host_class = host_class
+        self.group_class = group_class
+
+    def _get_or_generate_infra_group(self, host):
+        if not host:
+            return self.group_class()
+
+        infra = host.instances.first().databaseinfra
+        group = self.group_class.objects.filter(infra=infra).first()
+        if not group:
+            group = self.group_class()
+            group.infra = infra
+            group.resource_id = None
+        return group
 
     def create_export(self, host, size_kb):
-        request = self.client.export_create(size_kb, self.dbaas_api.category)
+        group = self._get_or_generate_infra_group(host)
+        request = self.client.export_create(
+            size_kb, self.dbaas_api.category, group.resource_id
+        )
+
         if request[0] != 201:
             raise CreateExportAPIError(request)
 
         export = request[1]
+
+        if not group.resource_id:
+            group.resource_id = export['resource_id']
+            group.save()
+
         disk = self.host_class(
             host=host,
             nfsaas_export_id=export['id'],
             nfsaas_path_host=export['path'],
             nfsaas_path=export['full_path'],
-            nfsaas_size_kb=size_kb
+            nfsaas_size_kb=size_kb,
+            group=group
         )
         disk.save()
 
@@ -53,6 +76,11 @@ class Provider(object):
             raise DeleteExportAPIError(request)
 
         disk.delete()
+
+        if disk.group:
+            group = disk.group
+            if not group.hosts.all():
+                group.delete()
 
         return True
 
@@ -138,3 +166,18 @@ class Provider(object):
             raise ResizeAPIError(request)
 
         return True
+
+    def create_resource_id(self, infra):
+        disks = set()
+        for instance in infra.instances.all():
+            for disk in instance.hostname.nfsaas_host_attributes.all():
+                disks.add(disk)
+
+        group = self.group_class()
+        group.infra = infra
+        group.resource_id = generate_resource_id(disks, self.dbaas_api)
+        group.save()
+
+        for disk in disks:
+            disk.group = group
+            disk.save()

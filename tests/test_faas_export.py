@@ -4,7 +4,7 @@ from dbaas_nfsaas.dbaas_api import DatabaseAsAServiceApi
 from dbaas_nfsaas.faas_provider import Provider
 from dbaas_nfsaas.errors import CreateExportAPIError, DeleteExportAPIError
 from tests import Credential, FakeHostClass, ObjectDoesNotExist, HOSTS, \
-    FakeCloudClass
+    FakeCloudClass, FakeGroup
 
 
 class TestFaaS(unittest.TestCase):
@@ -14,7 +14,8 @@ class TestFaaS(unittest.TestCase):
         cls.credential = Credential()
         cls.dbaas_api = DatabaseAsAServiceApi(credentials=cls.credential)
         cls.provider = Provider(
-            dbaas_api=cls.dbaas_api, host_class=FakeHostClass
+            dbaas_api=cls.dbaas_api, host_class=FakeHostClass,
+            group_class=FakeGroup
         )
 
     @classmethod
@@ -47,7 +48,7 @@ class TestFaaS(unittest.TestCase):
         self.assertEqual(len(HOSTS), 0)
         fake_host = FakeHostClass(
             host=FakeCloudClass(), nfsaas_export_id=-20,
-            nfsaas_path='', nfsaas_path_host='', nfsaas_size_kb=1
+            nfsaas_path='', nfsaas_path_host='', nfsaas_size_kb=1, group=None
         )
         HOSTS.append(fake_host)
         self.assertEqual(len(HOSTS), 1)
@@ -63,6 +64,6 @@ class TestFaaS(unittest.TestCase):
         self.assertEqual(len(HOSTS), 0)
         self.assertRaises(
             CreateExportAPIError,
-            self.provider.create_export, -111, None
+            self.provider.create_export, None, None
         )
         self.assertEqual(len(HOSTS), 0)

@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
+import requests
 import logging
 import paramiko
 import socket
+from ..errors import GenerateTokenError, GenerateResourceIdError
 
 LOG = logging.getLogger(__name__)
 
@@ -63,3 +65,37 @@ def delete_all_disk_files(
             password=cs_host_attr.vm_password, command=command, output=output
         )
         LOG.info(output)
+
+
+def generate_token(dbaas_api):
+    json_data = {
+        "auth": {
+            "tenantName": dbaas_api.tenant_name,
+            "passwordCredentials": {
+                "username": dbaas_api.user,
+                "password": dbaas_api.password
+            }
+        }
+    }
+
+    response = requests.post(
+        dbaas_api.token_endpoint, json=json_data, verify=not dbaas_api.is_secure
+    )
+    if response.status_code != 200:
+        raise GenerateTokenError(response.content)
+    return response.json()['access']['token']['id']
+
+
+def generate_resource_id(disks, dbaas_api):
+    token = generate_token(dbaas_api)
+
+    exports = [disk.nfsaas_export_id for disk in disks]
+    response = requests.post(
+        dbaas_api.resource_endpoint, headers={'X-Auth-Token': token},
+        data={'exports': exports}, verify=not dbaas_api.is_secure
+    )
+
+    if response.status_code != 200:
+        raise GenerateResourceIdError(response.content)
+
+    return response.json()['resource_id']
