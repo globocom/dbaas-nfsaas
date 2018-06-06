@@ -39,32 +39,22 @@ def exec_remote_command(server, username, password, command, output={}):
 def delete_all_disk_files(
         export_path, dir_name, export_id, host, cloud_host=None
 ):
-    if not cloud_host:
-        from dbaas_cloudstack.models import HostAttr as CsHostAttr
-        cloud_host = CsHostAttr
+    mount_path = "/mnt_{}_{}".format(dir_name, export_id)
+    command = "mkdir -p {}".format(mount_path)
+    command += "\nmount -t nfs -o bg,intr {} {}".format(
+        export_path, mount_path
+    )
+    command += "\nrm -rf {}/*".format(mount_path)
+    command += "\numount {}".format(mount_path)
+    command += "\nrm -rf {}".format(mount_path)
+    LOG.info(command)
 
-    try:
-        cs_host_attr = cloud_host.objects.get(host=host)
-    except Exception as e:
-        LOG.error("Could not clean old volume")
-        LOG.error(e)
-    else:
-        mount_path = "/mnt_{}_{}".format(dir_name, export_id)
-        command = "mkdir -p {}".format(mount_path)
-        command += "\nmount -t nfs -o bg,intr {} {}".format(
-            export_path, mount_path
-        )
-        command += "\nrm -rf {}/*".format(mount_path)
-        command += "\numount {}".format(mount_path)
-        command += "\nrm -rf {}".format(mount_path)
-        LOG.info(command)
-
-        output = {}
-        exec_remote_command(
-            server=host.address, username=cs_host_attr.vm_user,
-            password=cs_host_attr.vm_password, command=command, output=output
-        )
-        LOG.info(output)
+    output = {}
+    exec_remote_command(
+        server=host.address, username=host.user,
+        password=host.password, command=command, output=output
+    )
+    LOG.info(output)
 
 
 def generate_token(dbaas_api):
