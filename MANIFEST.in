@@ -4,5 +4,5 @@ include HISTORY.rst
 include LICENSE
 include README.rst
 include requirements.txt
-recursive-exclude migrations/ *.pyc
+recursive-exclude *.pyc
 recursive-include dbaas_nfsaas *.py
