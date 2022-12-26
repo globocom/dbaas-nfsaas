@@ -1,5 +1,5 @@
 django==1.6.10
-wheel==0.22.0
+wheel==0.38.1
 django-simple-audit==0.1.14
 South==0.8.2
 dbaas_credentials==0.1.0
